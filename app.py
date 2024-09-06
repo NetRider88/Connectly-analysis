@@ -3,7 +3,6 @@ import pandas as pd
 import plotly.express as px
 from io import BytesIO
 
-
 # Function to extract country name based on phone code
 def get_country(phone_number):
     phone_number = str(phone_number)
@@ -45,6 +44,10 @@ if uploaded_file:
         df['sent_at'] = pd.to_datetime(df['sent_at'], errors='coerce')
         df['delivered_at'] = pd.to_datetime(df['delivered_at'], errors='coerce')
         df['read_at'] = pd.to_datetime(df['read_at'], errors='coerce')
+
+        # Extract day and hour for read_at
+        df['read_day'] = df['read_at'].dt.day_name()
+        df['read_hour'] = df['read_at'].dt.hour
 
         # Treat any non-empty value in 'link_clicks' as clicked
         df['Clicked'] = df['link_clicks'].notna() & (df['link_clicks'] != '')
@@ -94,8 +97,24 @@ if uploaded_file:
         metrics = ["Dispatched", "Sent", "Read", "Clicked"]
         for metric in metrics:
             fig = px.bar(grouped, x='dispatched_month', y=metric, color='Country', barmode='group',
-                         title=f"{metric} Messages by Month and Country")
+                         title=f"{metric} Messages by Month and Country",
+                         labels={'dispatched_month': 'Month', metric: f'{metric} Count'})
+            fig.update_layout(title_font_size=20, xaxis_title='Month', yaxis_title=f'{metric} Count')
+            fig.update_xaxes(tickangle=45)
             st.plotly_chart(fig)
+
+        # Most common day and hour for read_at
+        st.subheader("Most Common Day and Hour for 'Read'")
+        read_day_group = filtered_df.groupby('read_day')['read_at'].count().reset_index().sort_values('read_at', ascending=False)
+        read_hour_group = filtered_df.groupby('read_hour')['read_at'].count().reset_index().sort_values('read_hour')
+
+        # Plot most common day for 'read_at'
+        fig_day = px.bar(read_day_group, x='read_day', y='read_at', title="Most Common Day for 'Read'")
+        st.plotly_chart(fig_day)
+
+        # Plot most common hour for 'read_at'
+        fig_hour = px.bar(read_hour_group, x='read_hour', y='read_at', title="Most Common Hour for 'Read'")
+        st.plotly_chart(fig_hour)
 
         # Option to download the data as an Excel file
         st.subheader("Download Analysis")
