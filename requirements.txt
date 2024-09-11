@@ -1,8 +1,4 @@
 streamlit
-pandas
 plotly
-xlsxwriter
-plotly.express
-io
 phonenumbers
 pycountry
